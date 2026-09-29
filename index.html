@@ -104,7 +104,7 @@ const CONFIG={PIN:"1234",SHEET_URL:"https://script.google.com/macros/s/AKfycbxwZ
 const $=s=>document.querySelector(s);
 const PR=(id,name,price,pre,cols,c,eh,max,badge,extra,o)=>({id,name,price,pre,badge,eh,max,extra:extra||[],...(o||{}),colors:cols.map(([l,h])=>({id:l.toLowerCase(),label:l,hex:h})),customization:{engraving:!!c[0],embossing:!!c[1],foiling:!!c[2]}});
 const PRODUCTS=[
-PR('voyage','The Voyage Tag',120,'TheVoyageTag',[['Blue','#7CA4B8'],['Brown','#9E7B5A'],['Pink','#D4A8A0'],['Red','#C0392B']],[1,1,0],'Short name or word · up to 15 characters',15),
+PR('voyage','The Voyage Tag',120,'TheVoyageTag',[['Blue','#7CA4B8'],['Brown','#9E7B5A'],['Pink','#D4A8A0'],['Red','#C0392B'],['White','#F0EBE3']],[1,1,0],'Short name or word · up to 15 characters',15),
 PR('heartpiece','The Heartpiece',85,'TheHeartpiece',[['Black','#1A1714'],['Blue','#7CA4B8'],['Brown','#9E7B5A'],['Green','#2D6A4F'],['Navy','#1B2A4A'],['Pink','#D4A8A0'],['Red','#C0392B']],[1,1,1],'Name or short message · up to 20 characters',20),
 PR('heartmirror','The Heart Mirror',110,'HeartMirror',[['Blue','#7CA4B8'],['Pink','#D4A8A0'],['Red','#C0392B'],['White','#F0EBE3']],[1,1,0],'Name or dedication · up to 20 characters',20),
 PR('foldable','The Foldable Mirror',95,'FoldableMirror',[['Brown','#9E7B5A'],['Green','#7EC8BE'],['Pink','#E8C4BC']],[1,0,0],'Name or initials · up to 20 characters',20),
