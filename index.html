@@ -39,7 +39,8 @@ html,body{width:820px;height:100%;overflow:hidden;background:var(--iv);font-fami
 input,textarea{-webkit-user-select:text;user-select:text;font:inherit;color:inherit;outline:none;border:0;background:none}
 .serif{font-family:'Cormorant Garamond',serif}
 #stage{position:fixed;inset:0;overflow:hidden}
-.scr{position:absolute;inset:0;padding:110px 48px 48px;overflow-y:auto;background:var(--iv);transition:transform .5s var(--ease)}
+.scr{position:absolute;inset:0;padding:48px;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y;background:var(--iv);transition:transform .5s var(--ease)}
+.scr.lt{top:96px;padding:28px 48px 56px}.scr.nos{overflow:hidden}
 .scr.dark{background:var(--ch);color:#fff;padding:48px}
 h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:60px;line-height:1.05}
 .sub{color:var(--wg);font-size:16px;margin:10px 0 28px;font-weight:300}
@@ -47,11 +48,12 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:60px;line-he
 .btn{display:inline-block;background:var(--ch);color:#fff;padding:20px 44px;border-radius:3px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;text-align:center;transition:all .2s var(--ease);cursor:pointer}
 .btn.gold{background:var(--gold)}.btn.ghost{background:none;color:var(--wg);border:1px solid var(--bd)}
 .btn.off{opacity:.3;pointer-events:none}.btn:active{transform:scale(.97)}
-.foot{position:absolute;right:48px;bottom:44px}
-#hdr{position:fixed;top:0;left:0;right:0;height:96px;z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;pointer-events:none}
-#hdr.on{display:flex}#ev{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--rose);letter-spacing:.08em}
+.foot{margin-top:28px;text-align:center}
+#hdr{position:fixed;top:0;left:0;right:0;height:96px;z-index:50;display:flex;align-items:center;justify-content:center;background:var(--iv);border-bottom:1px solid var(--bd);opacity:0;pointer-events:none;transition:opacity .3s}
+#hdr.on{opacity:1;pointer-events:auto}.mid{display:flex;flex-direction:column;align-items:center;gap:10px}
+#ev{font-family:'Cormorant Garamond',serif;font-size:20px;color:var(--rose);letter-spacing:.08em}
 #pill{width:140px;height:4px;border-radius:4px;background:var(--sand);overflow:hidden}#pf{height:100%;background:var(--gold);width:0;transition:width .5s var(--ease)}
-#back{position:fixed;top:30px;left:48px;z-index:60;display:none;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--wg);padding:14px 0}
+#back{position:absolute;left:76px;top:0;bottom:0;display:none;align-items:center;padding:0 16px;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--wg)}
 #hz{position:fixed;top:0;left:0;width:60px;height:60px;z-index:900}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
 .tile{border-radius:8px;overflow:hidden;background:var(--bg2);padding-bottom:14px;transition:transform .2s var(--ease)}
@@ -61,9 +63,9 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:60px;line-he
 .mb{mix-blend-mode:multiply}
 .tile .n{font-family:'Cormorant Garamond',serif;font-size:19px;padding:0 14px}.tile .p{color:var(--gold);font-size:11px;letter-spacing:.1em;padding:2px 14px 0}
 .badge{position:absolute;top:10px;right:10px;background:var(--gold);color:#fff;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;border-radius:20px}
-.split{display:flex;height:100%;margin:-110px -48px -48px}
+.split{display:flex;height:calc(100% + 84px);margin:-28px -48px -56px}
 .split .l{width:50%;background:var(--bg2)}.split .l img{width:100%;height:100%;object-fit:contain;padding:4%;transition:opacity .2s}
-.split .r{width:50%;padding:110px 40px 48px;display:flex;flex-direction:column;overflow-y:auto}
+.split .r{width:50%;padding:36px 40px 56px;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .row{display:flex;align-items:center;gap:16px;padding:18px 20px;border:1px solid var(--bd);border-radius:8px;margin-bottom:10px;background:#fff;transition:all .2s var(--ease);font-size:16px}
 .row.sel{background:var(--ch);color:#fff;border-color:var(--ch)}.sw{width:28px;height:28px;border-radius:50%;border:1px solid var(--bd)}
 .cards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
@@ -78,7 +80,7 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:60px;line-he
 .sum{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid var(--bd);align-items:center}.sum img{width:110px;height:140px;object-fit:contain;mix-blend-mode:multiply;border-radius:8px}
 .lab{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--wg)}.val{font-family:'Cormorant Garamond',serif;font-size:30px;font-style:italic}
 .pop{font-size:90px;color:var(--gold);animation:pop .8s var(--ease)}@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
-.ov2{position:fixed;inset:0;z-index:1000;background:var(--ch);color:#fff;transform:translateY(100%);transition:transform .5s var(--ease);overflow-y:auto}.ov2.on{transform:none}
+.ov2{position:fixed;inset:0;z-index:1000;background:var(--ch);color:#fff;transform:translateY(100%);transition:transform .5s var(--ease);overflow-y:auto}.ov2.on{transform:none}.ov2{-webkit-overflow-scrolling:touch;overscroll-behavior:contain;touch-action:pan-y}
 #admin{background:var(--iv);color:var(--ch);padding:60px 48px 100px}
 .dots{display:flex;gap:18px;justify-content:center;margin:30px 0}.dots i{width:16px;height:16px;border-radius:50%;border:1px solid var(--lg)}.dots i.f{background:var(--lg)}
 .keys{display:grid;grid-template-columns:repeat(3,90px);gap:14px;justify-content:center}.keys div{height:70px;border:1px solid #4a443d;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-family:'Cormorant Garamond',serif;width:90px;border-radius:35px}
@@ -89,13 +91,12 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:60px;line-he
 .ah{font-family:'Cormorant Garamond',serif;font-size:30px;margin:36px 0 14px}
 .pc{border:2px solid var(--bd);border-radius:8px;padding:8px;background:#fff;position:relative;opacity:.45;transition:all .2s}.pc.on{opacity:1;border-color:var(--gold)}
 .pc.on:after{content:'✓';position:absolute;top:6px;right:6px;background:var(--gold);color:#fff;width:22px;height:22px;border-radius:50%;text-align:center;line-height:22px;font-size:13px}
-.pc img{width:100%;aspect-ratio:1;object-fit:contain;mix-blend-mode:multiply;border-radius:5px}.pc div{font-size:13px;margin:6px 0 2px}
+.pc img{width:100%;aspect-ratio:1;object-fit:contain;border-radius:5px}.pc div{font-size:13px;margin:6px 0 2px}
 .ch{display:inline-block;width:26px;height:26px;border-radius:50%;border:2px solid var(--bd);margin:3px}.ch.x{opacity:.25}
 </style></head>
 <body>
 <div id="stage"></div>
-<div id="hdr"><div id="ev"></div><div id="pill"><div id="pf"></div></div></div>
-<div id="back" onclick="goBack()">← Back</div>
+<div id="hdr"><div id="back" onclick="goBack()">← Back</div><div class="mid"><div id="ev"></div><div id="pill"><div id="pf"></div></div></div></div>
 <div id="hz"></div>
 <div id="pin" class="ov2"><div style="text-align:center;padding-top:200px"><h1 style="color:#fff">Enter PIN</h1><div class="dots" id="dots"></div><div id="pmsg" style="height:24px;color:var(--lg)"></div><div class="keys" id="keys"></div><div onclick="closeOv()" style="margin-top:36px;color:var(--wg);font-size:13px;letter-spacing:.14em">CANCEL</div></div></div>
 <div id="admin" class="ov2"></div>
@@ -160,13 +161,13 @@ success:()=>`<div style="height:100%;display:flex;flex-direction:column;align-it
 };
 function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 function go(id,back){
- const el=document.createElement('div');el.className='scr'+(id=='welcome'||id=='success'?' dark':'');el.innerHTML=R[id]();
+ const el=document.createElement('div');el.className='scr'+(id=='welcome'||id=='success'?' dark':' lt')+(id=='color'?' nos':'');el.innerHTML=R[id]();
  el.style.transform=`translateX(${back?-100:100}%)`;$('#stage').appendChild(el);el.offsetWidth;
  if(cur){const o=cur.el;o.style.transform=`translateX(${back?100:-100}%)`;setTimeout(()=>o.remove(),520)}
  el.style.transform='none';cur={id,el};
  const i=STEPS.indexOf(id),dk=id=='welcome'||id=='success';
  $('#hdr').classList.toggle('on',!dk);$('#ev').textContent=eventConfig.eventName||'RTLH';$('#pf').style.width=((i+1)/STEPS.length*100)+'%';
- $('#back').style.display=hist.length&&!dk?'block':'none';
+ $('#back').style.display=hist.length&&!dk?'flex':'none';
  if(id=='products')toneTiles();
  if(id=='color')toneColor();
  if(id=='custom')pickType(G().customType,true);
@@ -249,7 +250,6 @@ async function testConn(b){const o=b.textContent;if(!eventConfig.sheetUrl){b.tex
 function launch(){if(eventConfig.eventName!==eventConfig._name){eventConfig.orderCounter=0;eventConfig._name=eventConfig.eventName}
  if(!active().length)selAll(true);save();closeOv();guestOrder=newOrder();hist=[];clearInterval(timer);go('welcome',true)}
 // ---------- lockdown ----------
-document.addEventListener('touchstart',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
 ['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
 go('welcome');
 </script></body></html>
