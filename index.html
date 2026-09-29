@@ -100,7 +100,7 @@ h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:60px;line-he
 <div id="pin" class="ov2"><div style="text-align:center;padding-top:200px"><h1 style="color:#fff">Enter PIN</h1><div class="dots" id="dots"></div><div id="pmsg" style="height:24px;color:var(--lg)"></div><div class="keys" id="keys"></div><div onclick="closeOv()" style="margin-top:36px;color:var(--wg);font-size:13px;letter-spacing:.14em">CANCEL</div></div></div>
 <div id="admin" class="ov2"></div>
 <script>
-const CONFIG={PIN:"1234",SHEET_URL:"",ASSETS_PATH:"Assets/"};
+const CONFIG={PIN:"1234",SHEET_URL:"https://script.google.com/macros/s/AKfycbxwZVXoH9BrYz1qFSavv3rl-sdJIP9RjPXo9n8XZjSYpaaLAb2ukdEhitY-Eu8bCR0C/exec",ASSETS_PATH:"Assets/"};
 const $=s=>document.querySelector(s);
 const PR=(id,name,price,pre,cols,c,eh,max,badge,extra,o)=>({id,name,price,pre,badge,eh,max,extra:extra||[],...(o||{}),colors:cols.map(([l,h])=>({id:l.toLowerCase(),label:l,hex:h})),customization:{engraving:!!c[0],embossing:!!c[1],foiling:!!c[2]}});
 const PRODUCTS=[
@@ -121,6 +121,7 @@ const def=()=>({v:2,eventName:'',showPrices:true,requireName:true,welcomeMessage
  enabledProducts:Object.fromEntries(PRODUCTS.map(p=>[p.id,{enabled:true,enabledColors:p.colors.map(c=>c.id)}]))});
 let eventConfig=def();
 try{const s=JSON.parse(localStorage.getItem('rtlh_event_config'));if(s&&s.v==2)eventConfig=Object.assign(def(),s)}catch(e){}
+if(!eventConfig.sheetUrl)eventConfig.sheetUrl=CONFIG.SHEET_URL;
 const save=()=>{try{localStorage.setItem('rtlh_event_config',JSON.stringify(eventConfig))}catch(e){}};
 const newOrder=()=>({product:null,color:null,customType:'none',customText:'',font:null,customerName:'',orderNumber:0});
 let guestOrder=newOrder(),cur=null,hist=[],timer=null;
