@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=820, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>RTLH Kiosk</title>
+<!--
+SETUP INSTRUCTIONS FOR GOOGLE SHEETS INTEGRATION:
+1. Go to script.google.com and create a new project
+2. Paste this code:
+
+function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var data = JSON.parse(e.postData.contents);
+  sheet.appendRow([data.timestamp,data.eventName,data.orderNumber,data.customerName,
+    data.product,data.color,data.customType,data.customText,data.font]);
+  return ContentService.createTextOutput('OK');
+}
+(Open the script from the Sheet via Extensions > Apps Script so it is bound to it.)
+
+3. Deploy → New deployment → Web app → Execute as Me → Anyone can access
+4. Copy the deployment URL and paste it into the Admin Panel
+
+TOOLS FILTER LOGIC (Admin > Event Setup > Tools Available):
+eventConfig.tools = { engraving:true, embossing:true, foiling:false } are global, per-event toggles.
+A personalisation option is shown to a guest only if BOTH are true:
+  product.customization.X (product supports it) AND eventConfig.tools.X (tool present at event)
+  if (product.customization.engraving && eventConfig.tools.engraving) -> show Engraving
+  if (product.customization.embossing && eventConfig.tools.embossing) -> show Embossing
+  if (product.customization.foiling   && eventConfig.tools.foiling)   -> show Foiling
+If only "No personalisation" remains, the Personalise screen is skipped (Font too, then Name).
+
+ADMIN ACCESS: tap the top-left corner 5 times within 2 seconds. PIN in CONFIG.PIN.
+-->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=DM+Sans:wght@300;400;500&family=Aboreto&family=Buenard:wght@400&family=Italiano&family=Pinyon+Script&family=Almarai:wght@400&family=Katibeh&family=Noto+Sans+Arabic:wght@400&family=Tajawal:wght@400&display=swap');
+:root{--iv:#FDFAF5;--bg2:#F0EAE0;--sand:#E2D8C8;--ch:#1C1916;--wg:#8A7F74;--gold:#B8904A;--lg:#D4B078;--rose:#9B6B5A;--bd:#DDD5C8;--ease:cubic-bezier(.16,1,.3,1)}
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+html,body{width:820px;height:100%;overflow:hidden;background:var(--iv);font-family:'DM Sans',sans-serif;color:var(--ch)}
+input,textarea{-webkit-user-select:text;user-select:text;font:inherit;color:inherit;outline:none;border:0;background:none}
+.serif{font-family:'Cormorant Garamond',serif}
+#stage{position:fixed;inset:0;overflow:hidden}
+.scr{position:absolute;inset:0;padding:110px 48px 48px;overflow-y:auto;background:var(--iv);transition:transform .5s var(--ease)}
+.scr.dark{background:var(--ch);color:#fff;padding:48px}
+h1{font-family:'Cormorant Garamond',serif;font-weight:300;font-size:60px;line-height:1.05}
+.sub{color:var(--wg);font-size:16px;margin:10px 0 28px;font-weight:300}
+.step{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:10px}
+.btn{display:inline-block;background:var(--ch);color:#fff;padding:20px 44px;border-radius:3px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;text-align:center;transition:all .2s var(--ease);cursor:pointer}
+.btn.gold{background:var(--gold)}.btn.ghost{background:none;color:var(--wg);border:1px solid var(--bd)}
+.btn.off{opacity:.3;pointer-events:none}.btn:active{transform:scale(.97)}
+.foot{position:absolute;right:48px;bottom:44px}
+#hdr{position:fixed;top:0;left:0;right:0;height:96px;z-index:50;display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px;pointer-events:none}
+#hdr.on{display:flex}#ev{font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--rose);letter-spacing:.08em}
+#pill{width:140px;height:4px;border-radius:4px;background:var(--sand);overflow:hidden}#pf{height:100%;background:var(--gold);width:0;transition:width .5s var(--ease)}
+#back{position:fixed;top:30px;left:48px;z-index:60;display:none;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--wg);padding:14px 0}
+#hz{position:fixed;top:0;left:0;width:60px;height:60px;z-index:900}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;align-items:start}
+.tile{border-radius:8px;overflow:hidden;background:var(--bg2);padding-bottom:14px;transition:transform .2s var(--ease)}
+.tile:active{transform:scale(.97)}
+.tile .im{position:relative;aspect-ratio:3/4;padding:4%}
+.tile img{width:100%;height:100%;object-fit:contain;display:block}
+.mb{mix-blend-mode:multiply}
+.tile .n{font-family:'Cormorant Garamond',serif;font-size:19px;padding:0 14px}.tile .p{color:var(--gold);font-size:11px;letter-spacing:.1em;padding:2px 14px 0}
+.badge{position:absolute;top:10px;right:10px;background:var(--gold);color:#fff;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:5px 10px;border-radius:20px}
+.split{display:flex;height:100%;margin:-110px -48px -48px}
+.split .l{width:50%;background:var(--bg2)}.split .l img{width:100%;height:100%;object-fit:contain;padding:4%;transition:opacity .2s}
+.split .r{width:50%;padding:110px 40px 48px;display:flex;flex-direction:column;overflow-y:auto}
+.row{display:flex;align-items:center;gap:16px;padding:18px 20px;border:1px solid var(--bd);border-radius:8px;margin-bottom:10px;background:#fff;transition:all .2s var(--ease);font-size:16px}
+.row.sel{background:var(--ch);color:#fff;border-color:var(--ch)}.sw{width:28px;height:28px;border-radius:50%;border:1px solid var(--bd)}
+.cards{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:24px}
+.card{padding:18px 22px;border:1px solid var(--bd);border-radius:8px;background:#fff;font-size:15px;transition:all .2s var(--ease)}
+.card small{display:block;color:var(--wg);font-size:11px;margin-top:3px}.card.sel{background:var(--ch);color:#fff;border-color:var(--ch)}.card.sel small{color:var(--lg)}
+.strip{display:flex;align-items:center;gap:16px;margin-bottom:26px;padding:12px;background:var(--bg2);border-radius:8px}.strip img{width:64px;height:64px;object-fit:contain;mix-blend-mode:multiply;border-radius:6px}
+.big{width:100%;border-bottom:1px solid var(--ch);font-family:'Cormorant Garamond',serif;font-size:34px;padding:12px 0}
+.emb{text-align:center;font-size:110px;letter-spacing:.2em;text-transform:uppercase;font-family:'DM Sans',monospace;font-weight:300;border:0}
+.cnt{text-align:right;font-size:12px;color:var(--wg);margin-top:8px}
+.fc{padding:20px 26px;border:1px solid var(--bd);border-left:3px solid var(--bd);border-radius:8px;background:#fff;margin-bottom:12px;transition:all .2s var(--ease)}
+.fc.sel{border-left-color:var(--gold);background:var(--bg2)}.fc b{display:block;font-weight:400;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--wg);margin-bottom:8px}.fc span{font-size:28px}
+.sum{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid var(--bd);align-items:center}.sum img{width:110px;height:140px;object-fit:contain;mix-blend-mode:multiply;border-radius:8px}
+.lab{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--wg)}.val{font-family:'Cormorant Garamond',serif;font-size:30px;font-style:italic}
+.pop{font-size:90px;color:var(--gold);animation:pop .8s var(--ease)}@keyframes pop{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+.ov2{position:fixed;inset:0;z-index:1000;background:var(--ch);color:#fff;transform:translateY(100%);transition:transform .5s var(--ease);overflow-y:auto}.ov2.on{transform:none}
+#admin{background:var(--iv);color:var(--ch);padding:60px 48px 100px}
+.dots{display:flex;gap:18px;justify-content:center;margin:30px 0}.dots i{width:16px;height:16px;border-radius:50%;border:1px solid var(--lg)}.dots i.f{background:var(--lg)}
+.keys{display:grid;grid-template-columns:repeat(3,90px);gap:14px;justify-content:center}.keys div{height:70px;border:1px solid #4a443d;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;font-family:'Cormorant Garamond',serif;width:90px;border-radius:35px}
+.shake{animation:sh .4s}@keyframes sh{25%{transform:translateX(-14px)}75%{transform:translateX(14px)}}
+.tg{display:flex;gap:16px;align-items:center;padding:20px;border:1px solid var(--bd);border-left:3px solid var(--bd);border-radius:8px;background:#fff;margin-bottom:10px;transition:all .2s var(--ease)}
+.tg.on{border-left-color:var(--gold);background:var(--bg2)}.tg .ck{margin-left:auto;color:var(--gold);opacity:0;font-size:20px}.tg.on .ck{opacity:1}.tg .ic{font-size:26px}.tg small{display:block;color:var(--wg);font-size:13px;margin-top:2px}
+.a-in{width:100%;padding:16px;border:1px solid var(--bd);border-radius:6px;background:#fff;font-size:17px;margin-bottom:10px}
+.ah{font-family:'Cormorant Garamond',serif;font-size:30px;margin:36px 0 14px}
+.pc{border:2px solid var(--bd);border-radius:8px;padding:8px;background:#fff;position:relative;opacity:.45;transition:all .2s}.pc.on{opacity:1;border-color:var(--gold)}
+.pc.on:after{content:'✓';position:absolute;top:6px;right:6px;background:var(--gold);color:#fff;width:22px;height:22px;border-radius:50%;text-align:center;line-height:22px;font-size:13px}
+.pc img{width:100%;aspect-ratio:1;object-fit:contain;mix-blend-mode:multiply;border-radius:5px}.pc div{font-size:13px;margin:6px 0 2px}
+.ch{display:inline-block;width:26px;height:26px;border-radius:50%;border:2px solid var(--bd);margin:3px}.ch.x{opacity:.25}
+</style></head>
+<body>
+<div id="stage"></div>
+<div id="hdr"><div id="ev"></div><div id="pill"><div id="pf"></div></div></div>
+<div id="back" onclick="goBack()">← Back</div>
+<div id="hz"></div>
+<div id="pin" class="ov2"><div style="text-align:center;padding-top:200px"><h1 style="color:#fff">Enter PIN</h1><div class="dots" id="dots"></div><div id="pmsg" style="height:24px;color:var(--lg)"></div><div class="keys" id="keys"></div><div onclick="closeOv()" style="margin-top:36px;color:var(--wg);font-size:13px;letter-spacing:.14em">CANCEL</div></div></div>
+<div id="admin" class="ov2"></div>
+<script>
+const CONFIG={PIN:"1234",SHEET_URL:"",ASSETS_PATH:"Assets/"};
+const $=s=>document.querySelector(s);
+const PR=(id,name,price,pre,cols,c,eh,max,badge,extra,o)=>({id,name,price,pre,badge,eh,max,extra:extra||[],...(o||{}),colors:cols.map(([l,h])=>({id:l.toLowerCase(),label:l,hex:h})),customization:{engraving:!!c[0],embossing:!!c[1],foiling:!!c[2]}});
+const PRODUCTS=[
+PR('voyage','The Voyage Tag',120,'TheVoyageTag',[['Blue','#7CA4B8'],['Brown','#9E7B5A'],['Pink','#D4A8A0'],['Red','#C0392B']],[1,1,0],'Short name or word · up to 15 characters',15),
+PR('heartpiece','The Heartpiece',85,'TheHeartpiece',[['Black','#1A1714'],['Blue','#7CA4B8'],['Brown','#9E7B5A'],['Green','#2D6A4F'],['Navy','#1B2A4A'],['Pink','#D4A8A0'],['Red','#C0392B']],[1,1,1],'Name or short message · up to 20 characters',20),
+PR('heartmirror','The Heart Mirror',110,'HeartMirror',[['Blue','#7CA4B8'],['Pink','#D4A8A0'],['Red','#C0392B'],['White','#F0EBE3']],[1,1,0],'Name or dedication · up to 20 characters',20),
+PR('foldable','The Foldable Mirror',95,'FoldableMirror',[['Brown','#9E7B5A'],['Green','#7EC8BE'],['Pink','#E8C4BC']],[1,0,0],'Name or initials · up to 20 characters',20),
+PR('necklace','The Necklace',195,'Necklace',[],[1,0,0],'One letter only',1,'Bestseller',['Necklace1','Necklace2'],{main:'Necklacemain.png'}),
+PR('cardholder','RTLH Card Holder',150,'RTLHCardHolder',[['Black','#1A1714'],['Burgundy','#6B2737'],['Gray','#9A9890'],['Navy','#1B2A4A']],[1,1,1],'Name or company · up to 20 characters',20,'New',[],{cf:{Burgundy:'Burgendy'}}),
+PR('magsafe','MagSafe',135,'Magsafe',[['Berry','#8B2A4E'],['Black','#1A1714'],['Crimson','#B01E3A'],['Desert Gold','#C9A464'],['Gray','#9A9890'],['Green','#2D6A4F'],['Lavender','#B7A6D6'],['Lemon','#F1E27A'],['Light Blue','#A9CCE3'],['Light Brown','#B48F6C'],['Light Pink','#F0C6CF'],['Navy','#1B2A4A'],['Orange','#E67E3C'],['Pink','#D4A8A0'],['Purple','#6F4A8E'],['Red','#C0392B'],['Rose Gold','#B76E79'],['Silver','#C0C0C0'],['White','#F0EBE3'],['Yellow','#F2C230']],[1,1,1],'Name or initials · up to 15 characters',15,'',[],{ext:'.jpg'}),
+PR('cardholder2','The Cardholder',150,'Cardholder',[['Beige','#D9C7A7'],['Blue','#7CA4B8'],['Pink','#D4A8A0']],[1,1,0],'Name or company · up to 20 characters',20),
+PR('guasha','Gua Sha',95,'GuaSha',[],[1,1,0],'Name or initials · up to 15 characters',15,'',[],{main:'GuaSha.png'})];
+const FONTS=[['Aboreto',"'Aboreto'",400,'normal','en'],['Buenard',"'Buenard'",400,'normal','en'],['Italiano',"'Italiano'",400,'normal','en'],['Pinyon Script',"'Pinyon Script'",400,'normal','en'],['Almarai',"'Almarai'",400,'normal','ar'],['Katibeh',"'Katibeh'",400,'normal','ar'],['Noto Sans Arabic',"'Noto Sans Arabic'",400,'normal','ar'],['Tajawal',"'Tajawal'",400,'normal','ar']];
+const fontList=()=>{const t=G().customText||'',ar=/[\u0600-\u06FF]/.test(t),la=/[A-Za-z]/.test(t)||!ar;return FONTS.filter(f=>(f[4]=='en'&&la)||(f[4]=='ar'&&ar))};
+const TYPES={none:['No personalisation','',0],engraving:['Engraving','',0],embossing:['Monogram Emboss','+ AED 15',15],foiling:['Foil Stamp','+ AED 20',20]};
+const imgOf=(p,c)=>CONFIG.ASSETS_PATH+(c?p.pre+((p.cf&&p.cf[c.label])||c.label.replace(/ /g,''))+(p.ext||'.png'):(p.main||p.pre+'Main.png'));
+const def=()=>({v:2,eventName:'',showPrices:true,requireName:true,welcomeMessage:'',tools:{engraving:true,embossing:true,foiling:false},sheetUrl:CONFIG.SHEET_URL,orderCounter:0,_name:'',
+ enabledProducts:Object.fromEntries(PRODUCTS.map(p=>[p.id,{enabled:true,enabledColors:p.colors.map(c=>c.id)}]))});
+let eventConfig=def();
+try{const s=JSON.parse(localStorage.getItem('rtlh_event_config'));if(s&&s.v==2)eventConfig=Object.assign(def(),s)}catch(e){}
+const save=()=>{try{localStorage.setItem('rtlh_event_config',JSON.stringify(eventConfig))}catch(e){}};
+const newOrder=()=>({product:null,color:null,customType:'none',customText:'',font:null,customerName:'',orderNumber:0});
+let guestOrder=newOrder(),cur=null,hist=[],timer=null;
+const EP=p=>eventConfig.enabledProducts[p.id]||{enabled:true,enabledColors:p.colors.map(c=>c.id)};
+const active=()=>PRODUCTS.filter(p=>EP(p).enabled);
+const colorsFor=p=>p.colors.filter(c=>EP(p).enabledColors.includes(c.id));
+const optsFor=p=>{const o=['none'];['engraving','embossing','foiling'].forEach(k=>{if(p.customization[k]&&eventConfig.tools[k])o.push(k)});return o};
+const G=()=>guestOrder;
+// ---------- navigation ----------
+const STEPS=['products','color','custom','font','name','summary'];
+const R={
+welcome:()=>`<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 45%,#2b2621,#1C1916 70%);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center">
+<img src="${CONFIG.ASSETS_PATH}RTLHPlainLogo.jpg" onerror="this.style.visibility='hidden'" style="width:180px;height:180px;border-radius:50%;object-fit:cover;border:1px solid var(--gold)">
+${eventConfig.eventName?`<div class="serif" style="font-size:28px;color:var(--gold);margin-top:28px">${esc(eventConfig.eventName)}</div>`:''}
+<div class="serif" style="font-size:72px;font-weight:300;letter-spacing:.18em;line-height:1.05;margin-top:28px;padding-left:.18em">RT<br>LH</div>
+<div class="serif" style="font-style:italic;font-size:30px;color:var(--lg);margin-top:16px">made yours.</div>
+${eventConfig.welcomeMessage?`<div style="color:var(--wg);font-size:15px;margin-top:18px;max-width:520px">${esc(eventConfig.welcomeMessage)}</div>`:''}
+<div class="btn gold" style="margin-top:48px;padding:24px 90px" onclick="start()">Begin</div>
+<div style="position:absolute;bottom:40px;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:rgba(255,255,255,.25)">Engraving Atelier · Dubai, UAE</div></div>`,
+products:()=>`<div class="step">Step 1</div><h1>Choose your piece.</h1><div class="sub">Tap to select the item you'd like personalised.</div><div class="grid">${active().map(p=>`<div class="tile" onclick="pickProduct('${p.id}')"><div class="im"><img src="${imgOf(p)}">${p.badge?`<span class="badge">${p.badge}</span>`:''}</div><div class="n">${p.name}</div>${eventConfig.showPrices?`<div class="p">AED ${p.price}</div>`:''}</div>`).join('')}</div>`,
+color:()=>{const p=G().product;return`<div class="split"><div class="l"><img id="cimg" src="${imgOf(p,G().color)}"></div><div class="r"><div class="step">Step 2</div><h1 style="font-size:38px;margin-bottom:24px">${p.name}</h1>${colorsFor(p).map(c=>`<div class="row ${G().color&&G().color.id==c.id?'sel':''}" data-c="${c.id}" onclick="pickColor('${c.id}')"><span class="sw" style="background:${c.hex}"></span>${c.label}</div>`).join('')}<div style="flex:1"></div><div id="cbtn" class="btn ${G().color?'':'off'}" onclick="nxt('color')">Continue →</div></div></div>`},
+custom:()=>{const p=G().product;return`<div class="step">Step 3</div><h1>Personalise it.</h1><div class="sub"></div>
+<div class="strip"><img src="${imgOf(p,G().color)}"><div><div class="serif" style="font-size:22px">${p.name}</div><div class="lab">${G().color?G().color.label:''}</div></div>${p.extra.map(e=>`<img src="${CONFIG.ASSETS_PATH+e}.png" style="width:44px;height:44px;margin-left:auto" onerror="this.remove()">`).join('')}</div>
+<div class="cards">${optsFor(p).map(k=>`<div class="card ${G().customType==k?'sel':''}" data-k="${k}" onclick="pickType('${k}')">${TYPES[k][0]}${TYPES[k][1]?`<small>${TYPES[k][1]}</small>`:''}</div>`).join('')}</div>
+<div id="inp"></div><div class="foot"><div id="cbtn" class="btn off" onclick="nxt('custom')">Continue →</div></div>`},
+font:()=>{const t=G().customText||'RTLH';return`<div class="step">Step 4</div><h1>Choose your font.</h1><div class="sub"></div>${fontList().map(f=>{const i=FONTS.indexOf(f);return`<div class="fc ${G().font===i?'sel':''}" data-i="${i}" onclick="pickFont(${i})"><b>${f[0]} · ${f[4]=='ar'?'Arabic':'English'}</b><span dir="auto" style="font-family:${f[1]},serif;font-weight:${f[2]};font-style:${f[3]}">${esc(t)}</span></div>`}).join('')}<div class="foot"><div class="btn ${G().font===null?'off':''}" id="cbtn" onclick="nxt('font')">Continue →</div></div>`},
+name:()=>`<div style="height:100%;display:flex;flex-direction:column;justify-content:center;text-align:center"><h1 style="font-size:48px">Your name, please.</h1><div class="sub">So we know when your piece is ready.</div><input id="nm" class="big" style="font-size:48px;text-align:center" placeholder="First name..." maxlength="24" value="${esc(G().customerName)}" oninput="G().customerName=this.value.trim();$('#cbtn').classList.toggle('off',!G().customerName)"><div style="margin-top:44px"><div id="cbtn" class="btn ${G().customerName?'':'off'}" onclick="nxt('name')">Review Order →</div></div></div>`,
+summary:()=>{const g=G(),p=g.product,add=TYPES[g.customType][2],f=g.font!==null&&(g.customType=='engraving'||g.customType=='foiling')?FONTS[g.font]:null;
+return`<div class="step">Review</div><h1>Your order.</h1><div class="sub"></div>
+<div class="sum"><img src="${imgOf(p,g.color)}"><div><div class="serif" style="font-size:30px">${p.name}</div><div class="lab" style="margin:6px 0">${g.color?g.color.label:''}</div>${eventConfig.showPrices?`<div style="color:var(--gold)">AED ${p.price+add}</div>`:''}</div></div>
+<div class="sum" style="display:block"><div class="lab">${TYPES[g.customType][0]}</div>${g.customType!='none'?`<div class="val" style="${f?`font-family:${f[1]},serif;font-weight:${f[2]};font-style:${f[3]};font-size:38px`:''}">${esc(g.customText)}</div>`:''}</div>
+${f?`<div class="sum" style="display:block"><div class="lab">Font</div><div style="font-size:20px">${f[0]}</div></div>`:''}
+<div class="sum" style="display:block"><div class="lab">For</div><div class="val" style="font-size:44px">${esc(g.customerName||'Guest')}</div></div>
+<div style="margin-top:34px;text-align:center"><div class="btn" style="padding:24px 80px" onclick="submitOrder()">Confirm &amp; Send</div><div class="btn ghost" style="display:block;margin:16px auto 0;width:300px;padding:14px" onclick="goBack()">Something's wrong? Go back</div></div>`},
+success:()=>`<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center"><div class="pop">◈</div><h1 style="font-size:56px;color:#fff;margin-top:20px">Order placed.</h1><div class="serif" style="font-style:italic;color:var(--gold);font-size:30px;margin:10px 0 24px">For ${esc(G().customerName||'Guest')}</div><div style="color:var(--wg);max-width:460px;line-height:1.6">Our engraver will call your name when your piece is ready. made yours.</div><div class="btn ghost" style="margin-top:40px;color:#fff;border-color:#4a443d" onclick="resetKiosk()">Next Guest →</div><div id="cd" style="position:absolute;bottom:40px;font-size:12px;color:var(--wg)">Resets in 10s</div></div>`
+};
+function esc(s){return String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function go(id,back){
+ const el=document.createElement('div');el.className='scr'+(id=='welcome'||id=='success'?' dark':'');el.innerHTML=R[id]();
+ el.style.transform=`translateX(${back?-100:100}%)`;$('#stage').appendChild(el);el.offsetWidth;
+ if(cur){const o=cur.el;o.style.transform=`translateX(${back?100:-100}%)`;setTimeout(()=>o.remove(),520)}
+ el.style.transform='none';cur={id,el};
+ const i=STEPS.indexOf(id),dk=id=='welcome'||id=='success';
+ $('#hdr').classList.toggle('on',!dk);$('#ev').textContent=eventConfig.eventName||'RTLH';$('#pf').style.width=((i+1)/STEPS.length*100)+'%';
+ $('#back').style.display=hist.length&&!dk?'block':'none';
+ if(id=='products')toneTiles();
+ if(id=='color')toneColor();
+ if(id=='custom')pickType(G().customType,true);
+ if(id=='name')setTimeout(()=>{const n=$('#nm');n&&n.focus()},550);
+ if(id=='success'){let s=10;timer=setInterval(()=>{s--;const c=$('#cd');if(c)c.textContent='Resets in '+s+'s';if(s<=0)resetKiosk()},1000)}
+}
+function tone(img,cb){const f=()=>{try{const c=document.createElement('canvas');c.width=c.height=1;const x=c.getContext('2d');x.drawImage(img,3,3,6,6,0,0,1,1);const d=x.getImageData(0,0,1,1).data;cb(d[3]<40?null:`rgb(${d[0]},${d[1]},${d[2]})`)}catch(e){cb(null)}};img.complete&&img.naturalWidth?f():img.addEventListener('load',f,{once:true})}
+function toneTiles(){document.querySelectorAll('.tile').forEach(t=>{const im=t.querySelector('img');tone(im,c=>{if(c)t.style.background=c;else im.classList.add('mb')})})}
+function toneColor(){const im=$('#cimg');if(!im)return;tone(im,c=>{$('.split .l').style.background=c||'';im.classList.toggle('mb',!c)})}
+function goto(id){if(cur&&cur.id!=id&&cur.id!='success')hist.push(cur.id);go(id)}
+function goBack(){const p=hist.pop();if(p)go(p,true)}
+function nxt(from){const p=G().product;
+ for(let i=STEPS.indexOf(from)+1;i<STEPS.length;i++){const s=STEPS[i];
+  if(s=='color'&&colorsFor(p).length<2)continue;
+  if(s=='custom'&&optsFor(p).length<2)continue;
+  if(s=='font'&&!(G().customType=='engraving'||G().customType=='foiling'))continue;
+  if(s=='name'&&!eventConfig.requireName)continue;
+  if(s=='font')G().font=FONTS.indexOf(fontList()[0]);
+  return goto(s)}}
+function start(){guestOrder=newOrder();hist=[];const a=active();if(a.length==1)pickProduct(a[0].id);else goto('products')}
+function pickProduct(id){const p=PRODUCTS.find(x=>x.id==id),cs=colorsFor(p);guestOrder=newOrder();guestOrder.product=p;guestOrder.color=cs.length==1?cs[0]:null;
+ if(!cur||cur.id=='welcome')cur&&(cur.id='welcome');nxt('products')}
+function pickColor(id){const c=colorsFor(G().product).find(x=>x.id==id);G().color=c;
+ document.querySelectorAll('.row').forEach(r=>r.classList.toggle('sel',r.dataset.c==id));$('#cbtn').classList.remove('off');
+ const im=$('#cimg');im.style.opacity=0;setTimeout(()=>{im.src=imgOf(G().product,c);im.onload=()=>{toneColor();im.style.opacity=1}},200)}
+function pickType(k,keep){const g=G();if(!keep){g.customText=''}g.customType=k;
+ document.querySelectorAll('.card').forEach(c=>c.classList.toggle('sel',c.dataset.k==k));
+ const p=g.product,b=$('#inp');
+ if(k=='none')b.innerHTML='';
+ else if(k=='engraving'&&p.max>1)b.innerHTML=`<div class="lab" style="margin-bottom:10px">${p.eh}</div><textarea id="ti" rows="3" maxlength="${p.max}" placeholder="Write something meaningful..." style="width:100%;font-family:'Cormorant Garamond',serif;font-size:40px;border-bottom:1px solid var(--ch);resize:none" oninput="typed(this,${p.max})">${esc(g.customText)}</textarea><div class="cnt" id="cnt">${g.customText.length} / ${p.max}</div>`;
+ else{const m=k=='engraving'?p.max:3;b.innerHTML=`<div class="lab" style="text-align:center;margin-bottom:10px">${m==1?'One letter':'Up to 3 initials'}</div><input id="ti" class="emb big" maxlength="${m}" value="${esc(g.customText)}" placeholder="${m==1?'A':'ABC'}" autocapitalize="characters" oninput="typed(this,${m})">`}
+ typedBtn();if(!keep&&k!='none'){const t=$('#ti');t&&t.focus()}}
+function typed(el,max){el.value=el.value.replace(/\n/g,' ');if(G().customType!='engraving'||max==1)el.value=el.value.toUpperCase();G().customText=el.value;const c=$('#cnt');if(c)c.textContent=el.value.length+' / '+max;typedBtn()}
+function typedBtn(){const g=G();$('#cbtn').classList.toggle('off',g.customType!='none'&&!g.customText.trim())}
+function pickFont(i){G().font=i;document.querySelectorAll('.fc').forEach(c=>c.classList.toggle('sel',c.dataset.i==i));$('#cbtn').classList.remove('off')}
+// ---------- submission ----------
+function dubai(){return new Date().toLocaleString('en-GB',{timeZone:'Asia/Dubai',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).replace(',','')}
+function payload(g){const f=g.font!==null&&(g.customType=='engraving'||g.customType=='foiling')?FONTS[g.font][0]:'N/A';
+ return{timestamp:dubai(),eventName:eventConfig.eventName,customerName:g.customerName||'Guest',product:g.product.name,color:g.color?g.color.label:'N/A',customType:TYPES[g.customType][0],customText:g.customType=='none'?'—':g.customText,font:f,orderNumber:String(g.orderNumber).padStart(4,'0')}}
+async function submitOrder(){
+ const g=G();eventConfig.orderCounter=(eventConfig.orderCounter||0)+1;g.orderNumber=eventConfig.orderCounter;save();
+ const d=payload(g);
+ goto('success');
+ try{if(eventConfig.sheetUrl)await fetch(eventConfig.sheetUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)})}catch(e){}
+}
+function resetKiosk(){clearInterval(timer);guestOrder=newOrder();hist=[];go('welcome',true)}
+// ---------- admin gesture + PIN ----------
+let taps=[],pin='';
+$('#hz').addEventListener('click',()=>{const n=Date.now();taps=taps.filter(t=>n-t<2000);taps.push(n);if(taps.length>=5){taps=[];openPin()}});
+function openPin(){pin='';drawDots();$('#pmsg').textContent='';$('#pin').classList.add('on')}
+function closeOv(){$('#pin').classList.remove('on');$('#admin').classList.remove('on')}
+function drawDots(){$('#dots').innerHTML=[0,1,2,3].map(i=>`<i class="${i<pin.length?'f':''}"></i>`).join('')}
+$('#keys').innerHTML=[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>`<div onclick="key('${k}')" style="${k===''?'border:0':''}">${k}</div>`).join('');
+function key(k){if(k==='')return;if(k=='⌫')pin=pin.slice(0,-1);else if(pin.length<4)pin+=k;drawDots();
+ if(pin.length==4){if(pin==CONFIG.PIN){$('#pin').classList.remove('on');drawAdmin();$('#admin').classList.add('on')}
+  else{const d=$('#dots');d.classList.add('shake');$('#pmsg').textContent='Incorrect';setTimeout(()=>{d.classList.remove('shake');pin='';drawDots()},450)}}}
+// ---------- admin panel ----------
+const TOOLS=[['engraving','✒','Engraving Machine','Live laser or hand engraving on leather and metal'],['embossing','◉','Embossing / Stamp Press','Heat stamp monograms and initials into leather'],['foiling','✦','Foiling Machine','Gold and silver foil application']];
+function drawAdmin(){const a=$('#admin'),sc=a.scrollTop,e=eventConfig;
+ const tg=(on,ic,t,s,fn)=>`<div class="tg ${on?'on':''}" onclick="${fn}"><span class="ic">${ic}</span><div>${t}<small>${s}</small></div><span class="ck">✓</span></div>`;
+ a.innerHTML=`<div class="step">RTLH · Operator</div><h1>Event setup.</h1>
+<div class="ah">Event</div><input class="a-in" placeholder="Event Name (blank = RTLH logo only)" value="${esc(e.eventName)}" oninput="eventConfig.eventName=this.value">
+<input class="a-in" placeholder="Custom welcome message (optional)" value="${esc(e.welcomeMessage)}" oninput="eventConfig.welcomeMessage=this.value">
+${tg(e.showPrices,'AED','Show price to guests','',"tp('showPrices')")}${tg(e.requireName,'Aa','Require guest name','',"tp('requireName')")}
+<div class="ah">Tools available for this event</div>${TOOLS.map(t=>tg(e.tools[t[0]],t[1],t[2],t[3],`eventConfig.tools.${t[0]}=!eventConfig.tools.${t[0]};drawAdmin()`)).join('')}
+<div class="ah">Products &amp; colors</div><div style="display:flex;gap:10px;margin-bottom:14px"><div class="btn ghost" style="padding:12px 24px" onclick="selAll(true)">Select all</div><div class="btn ghost" style="padding:12px 24px" onclick="selAll(false)">Deselect all</div></div>
+<div class="grid">${PRODUCTS.map(p=>{const s=EP(p);return`<div class="pc ${s.enabled?'on':''}"><div onclick="togP('${p.id}')" style="margin:0"><img src="${imgOf(p)}"><div>${p.name}</div></div>${s.enabled?p.colors.map(c=>`<span class="ch ${s.enabledColors.includes(c.id)?'':'x'}" style="background:${c.hex}" onclick="togC('${p.id}','${c.id}')"></span>`).join(''):''}</div>`}).join('')}</div>
+<div class="ah">Google Sheets</div><input class="a-in" placeholder="Apps Script Web App URL" value="${esc(e.sheetUrl)}" oninput="eventConfig.sheetUrl=this.value.trim()">
+<div class="sub" style="margin:0 0 12px">Paste your Google Apps Script deployment URL here. Orders will be sent automatically.</div>
+<div class="btn ghost" style="padding:14px 28px" onclick="testConn(this)">Test Connection</div>
+<div style="margin-top:50px"><div class="btn" style="padding:26px 70px" onclick="launch()">Launch Event →</div></div>`;a.scrollTop=sc}
+function tp(k){eventConfig[k]=!eventConfig[k];drawAdmin()}
+function togP(id){const s=eventConfig.enabledProducts[id]||(eventConfig.enabledProducts[id]=EP(PRODUCTS.find(p=>p.id==id)));s.enabled=!s.enabled;drawAdmin()}
+function togC(id,c){const s=eventConfig.enabledProducts[id],i=s.enabledColors.indexOf(c);i<0?s.enabledColors.push(c):s.enabledColors.splice(i,1);drawAdmin()}
+function selAll(v){PRODUCTS.forEach(p=>{const s=EP(p);s.enabled=v;eventConfig.enabledProducts[p.id]=s});drawAdmin()}
+async function testConn(b){const o=b.textContent;if(!eventConfig.sheetUrl){b.textContent='Enter a URL first';return setTimeout(()=>b.textContent=o,2000)}
+ try{await fetch(eventConfig.sheetUrl,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({timestamp:dubai(),eventName:'TEST',orderNumber:'0000',customerName:'Test',product:'Test',color:'N/A',customType:'Test',customText:'—',font:'N/A'})});b.textContent='✓ Sent — check your sheet'}catch(e){b.textContent='✗ Failed'}
+ setTimeout(()=>b.textContent=o,3000)}
+function launch(){if(eventConfig.eventName!==eventConfig._name){eventConfig.orderCounter=0;eventConfig._name=eventConfig.eventName}
+ if(!active().length)selAll(true);save();closeOv();guestOrder=newOrder();hist=[];clearInterval(timer);go('welcome',true)}
+// ---------- lockdown ----------
+document.addEventListener('touchstart',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});
+['gesturestart','gesturechange'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
+go('welcome');
+</script></body></html>
