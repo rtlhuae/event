@@ -109,11 +109,14 @@ const $=s=>document.querySelector(s);
 // Which tools each product supports at events: [engraving, embossing, foiling]. New products default to engraving only.
 const TOOLS_BY_PRODUCT={'the-porte':[1,1,1],'magsafe-with-stand':[1,1,1],'the-heartpiece':[1,1,1],'the-heart-mirror':[1,1,0],'the-foldable-mirror':[1,0,0],'the-voyage-tag':[1,1,0],'the-heart-necklace':[1,0,0],'the-card-holder':[1,1,1],'the-cardholder':[1,1,0],'the-star-charm':[1,1,0],'the-heart-pendant':[1,0,0],'the-heart-ring':[1,0,0],'the-mirror-grip':[0,0,0],'the-gua-sha':[1,1,0]};
 let PRODUCTS=[],GALLERY=[],IMG=CONFIG.SITE+'/img/p/',GIMG=CONFIG.SITE+'/img/g/';
+// Kiosk-only simplifications: colours shown as one choice to guests
+const KIOSK_MERGE={'the-mirror-grip':{oval:'Oval',largeoval:'Oval'}};
+function kioskColors(p){const mg=KIOSK_MERGE[p.slug]||{},out=[];p.colors.forEach(c=>{const lab=mg[c.id];if(lab){if(out.some(o=>o.label==lab))return;out.push({id:'m-'+lab.toLowerCase(),label:lab,hex:c.hex,image:c.image})}else out.push({id:c.id,label:c.name,hex:c.hex,image:c.image})});return out}
 function buildProducts(cat){IMG=cat.img||IMG;GIMG=cat.gallery||GIMG;
  PRODUCTS=cat.products.map(p=>{const pz=p.personalise||{},t=TOOLS_BY_PRODUCT[p.slug]||[1,0,0],max=pz.maxChars||15;
   return{id:p.slug,name:p.name,price:p.price||0,badge:p.badge||'',hidden:!!p.hidden,main:p.mainImage,extra:p.gallery||[],max,photo:!!pz.picture,
    eh:max==1?'One letter only':'Name or initials · up to '+max+' characters',
-   colors:p.colors.map(c=>({id:c.id,label:c.name,hex:c.hex,image:c.image})),
+   colors:kioskColors(p),
    customization:{engraving:!!(t[0]&&pz.text!==false),embossing:!!t[1],foiling:!!t[2]}}})}
 const FONTS=[['Aboreto',"'Aboreto'",400,'normal','en'],['Buenard',"'Buenard'",400,'normal','en'],['Italiano',"'Italiano'",400,'normal','en'],['Pinyon Script',"'Pinyon Script'",400,'normal','en'],['Almarai',"'Almarai'",400,'normal','ar'],['Katibeh',"'Katibeh'",400,'normal','ar'],['Noto Sans Arabic',"'Noto Sans Arabic'",400,'normal','ar'],['Tajawal',"'Tajawal'",400,'normal','ar']];
 const fontList=()=>{const t=G().customText||'',ar=/[؀-ۿ]/.test(t),la=/[A-Za-z]/.test(t)||!ar;return FONTS.filter(f=>(f[4]=='en'&&la)||(f[4]=='ar'&&ar))};
